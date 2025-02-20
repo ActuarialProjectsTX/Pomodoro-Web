@@ -19,10 +19,6 @@ main {
     padding: 0 20px;
 }
 
-section {
-    margin-bottom: 30px;
-}
-
 #timer-display {
     font-size: 60px;
     text-align: center;
@@ -60,7 +56,7 @@ button:disabled {
 #task-list li {
     display: flex;
     justify-content: space-between;
-    align-items: center; /* Vertically centers the content */
+    align-items: center; /* Vertically center task content */
     padding: 10px;
     background-color: white;
     margin-bottom: 5px;
@@ -79,14 +75,22 @@ button:disabled {
     border-radius: 4px;
 }
 
-#settings-section label {
-    display: block;
-    margin: 10px 0;
+#duration-section {
+    margin-bottom: 20px;
 }
 
-#settings-section input {
-    width: 60px;
-    padding: 5px;
+#duration-buttons button {
+    margin-right: 5px;
+}
+
+#stats-section {
+    margin-top: 20px;
+}
+
+#task-section select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 10px;
 }
 
 /* Responsive Design */
