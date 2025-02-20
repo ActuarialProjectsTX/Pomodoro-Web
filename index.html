@@ -4,11 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pomodoro Tool</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        :root {
+            --bg-color: #f4f4f4;
+            --text-color: #333;
+            --button-bg: #ff6347;
+            --button-text: white;
+            --timer-color: #ff6347;
+            --font-family: Arial, sans-serif;
+            --border-radius: 4px;
+        }
+        body {
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+        }
+        header, footer {
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            text-align: center;
+            padding: 10px 0;
+        }
+        main {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        #timer-display {
+            font-size: 60px;
+            text-align: center;
+            color: var(--timer-color);
+        }
+        button {
+            padding: 8px 16px;
+            margin: 5px;
+            background-color: var(--button-bg);
+            color: var(--button-text);
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+        }
+        button:hover {
+            filter: brightness(90%);
+        }
+        #task-list li {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            background-color: white;
+            margin-bottom: 5px;
+            border-radius: var(--border-radius);
+        }
+        #settings-panel {
+            position: fixed;
+            right: 0;
+            top: 0;
+            width: 300px;
+            height: 100%;
+            background: white;
+            box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+            padding: 20px;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        #settings-panel.open {
+            transform: translateX(0);
+        }
+        #task-section select {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
     <header>
         <h1>Pomodoro Tool</h1>
+        <button id="settings-btn">⚙️ Settings</button>
     </header>
     <main>
         <section id="timer-section">
@@ -21,28 +95,197 @@
         </section>
         <section id="task-section">
             <h2>Tasks</h2>
+            <select id="task-select">
+                <option value="">Select a task</option>
+            </select>
             <ul id="task-list"></ul>
             <form id="add-task-form">
                 <input type="text" id="task-input" placeholder="Enter a task" required>
                 <button type="submit">Add</button>
             </form>
         </section>
-        <section id="settings-section">
-            <h2>Settings</h2>
-            <label>
-                Work Session (min): 
-                <input type="number" id="session-length" min="1" value="25">
-            </label>
-            <label>
-                Break (min): 
-                <input type="number" id="break-length" min="1" value="5">
-            </label>
-            <button id="save-settings">Save</button>
-        </section>
     </main>
+    <div id="settings-panel">
+        <h2>Customize Design</h2>
+        <label>Background Color: <input type="color" id="bg-color" value="#f4f4f4"></label><br>
+        <label>Text Color: <input type="color" id="text-color" value="#333333"></label><br>
+        <label>Button Color: <input type="color" id="button-bg" value="#ff6347"></label><br>
+        <label>Timer Color: <input type="color" id="timer-color" value="#ff6347"></label><br>
+        <label>Font: 
+            <select id="font-family">
+                <option value="Arial, sans-serif">Arial</option>
+                <option value="Helvetica, sans-serif">Helvetica</option>
+                <option value="Times New Roman, serif">Times New Roman</option>
+                <option value="Courier New, monospace">Courier New</option>
+            </select>
+        </label><br>
+        <label>Border Radius: <input type="range" id="border-radius" min="0" max="20" value="4"></label><br>
+        <button id="apply-settings">Apply</button>
+    </div>
     <footer>
-        <p>&copy; 2023 Pomodoro Tool</p>
+        <p>© 2023 Pomodoro Tool</p>
     </footer>
-    <script src="script.js"></script>
+    <script>
+        // Timer variables
+        let timeLeft = 25 * 60;
+        let isRunning = false;
+        let intervalId = null;
+        let currentTask = null;
+
+        // DOM elements
+        const timerDisplay = document.getElementById('timer-display');
+        const startBtn = document.getElementById('start-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const taskSelect = document.getElementById('task-select');
+        const taskList = document.getElementById('task-list');
+        const addTaskForm = document.getElementById('add-task-form');
+        const taskInput = document.getElementById('task-input');
+        const settingsBtn = document.getElementById('settings-btn');
+        const settingsPanel = document.getElementById('settings-panel');
+        const applySettingsBtn = document.getElementById('apply-settings');
+
+        // Load tasks and settings from local storage
+        let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+        let settings = JSON.parse(localStorage.getItem('settings')) || {};
+
+        // Apply saved settings on load
+        if (Object.keys(settings).length > 0) {
+            document.documentElement.style.setProperty('--bg-color', settings.bgColor);
+            document.documentElement.style.setProperty('--text-color', settings.textColor);
+            document.documentElement.style.setProperty('--button-bg', settings.buttonBg);
+            document.documentElement.style.setProperty('--timer-color', settings.timerColor);
+            document.documentElement.style.setProperty('--font-family', settings.fontFamily);
+            document.documentElement.style.setProperty('--border-radius', settings.borderRadius);
+        }
+
+        // Timer functions
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                intervalId = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateTimerDisplay();
+                    } else {
+                        clearInterval(intervalId);
+                        isRunning = false;
+                        if (currentTask) {
+                            const task = tasks.find(t => t.name === currentTask);
+                            task.completed = (task.completed || 0) + 1;
+                            saveTasks();
+                            renderTasks();
+                        }
+                        alert('Pomodoro completed!');
+                        resetTimer();
+                    }
+                }, 1000);
+            }
+        }
+
+        function pauseTimer() {
+            clearInterval(intervalId);
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+        }
+
+        function resetTimer() {
+            clearInterval(intervalId);
+            isRunning = false;
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            timeLeft = 25 * 60;
+            updateTimerDisplay();
+        }
+
+        // Task functions
+        function renderTasks() {
+            taskList.innerHTML = '';
+            taskSelect.innerHTML = '<option value="">Select a task</option>';
+            tasks.forEach((task, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${task.name} (${task.completed || 0} Pomodoros)`;
+                const deleteBtn = document.createElement('button');
+                deleteBtn.textContent = 'Delete';
+                deleteBtn.onclick = () => deleteTask(index);
+                li.appendChild(deleteBtn);
+                taskList.appendChild(li);
+
+                const option = document.createElement('option');
+                option.value = task.name;
+                option.textContent = task.name;
+                taskSelect.appendChild(option);
+            });
+            if (currentTask) taskSelect.value = currentTask;
+        }
+
+        function addTask(name) {
+            tasks.push({ name, completed: 0 });
+            saveTasks();
+            renderTasks();
+        }
+
+        function deleteTask(index) {
+            tasks.splice(index, 1);
+            if (tasks.length === 0) currentTask = null;
+            saveTasks();
+            renderTasks();
+        }
+
+        function saveTasks() {
+            localStorage.setItem('tasks', JSON.stringify(tasks));
+        }
+
+        // Settings functions
+        function applySettings() {
+            const bgColor = document.getElementById('bg-color').value;
+            const textColor = document.getElementById('text-color').value;
+            const buttonBg = document.getElementById('button-bg').value;
+            const timerColor = document.getElementById('timer-color').value;
+            const fontFamily = document.getElementById('font-family').value;
+            const borderRadius = document.getElementById('border-radius').value + 'px';
+
+            document.documentElement.style.setProperty('--bg-color', bgColor);
+            document.documentElement.style.setProperty('--text-color', textColor);
+            document.documentElement.style.setProperty('--button-bg', buttonBg);
+            document.documentElement.style.setProperty('--timer-color', timerColor);
+            document.documentElement.style.setProperty('--font-family', fontFamily);
+            document.documentElement.style.setProperty('--border-radius', borderRadius);
+
+            settings = { bgColor, textColor, buttonBg, timerColor, fontFamily, borderRadius };
+            localStorage.setItem('settings', JSON.stringify(settings));
+            settingsPanel.classList.remove('open');
+        }
+
+        // Event listeners
+        startBtn.addEventListener('click', startTimer);
+        pauseBtn.addEventListener('click', pauseTimer);
+        resetBtn.addEventListener('click', resetTimer);
+        addTaskForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            addTask(taskInput.value.trim());
+            taskInput.value = '';
+        });
+        taskSelect.addEventListener('change', (e) => {
+            currentTask = e.target.value || null;
+        });
+        settingsBtn.addEventListener('click', () => {
+            settingsPanel.classList.toggle('open');
+        });
+        applySettingsBtn.addEventListener('click', applySettings);
+
+        // Initialize
+        updateTimerDisplay();
+        renderTasks();
+    </script>
 </body>
 </html>
