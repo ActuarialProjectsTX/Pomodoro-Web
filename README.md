@@ -9,9 +9,9 @@ A simple, web-based Pomodoro timer hosted on GitHub Pages.
 - Responsive design.
 
 ## How to Use
-1. Visit `<your-username>.github.io/pomodoro-tool/`.
+1. Visit `https://actuarialprojectstx.github.io/Pomodoro-Web/`.
 2. Add tasks, start the timer, and customize settings as needed.
 
 ## Setup Locally
-1. Clone the repo: `git clone https://github.com/<your-username>/pomodoro-tool.git`.
+1. Clone the repo: `git clone https://github.com/actuarialprojectstx/pomodoro-tool.git`.
 2. Open `index.html` in a browser.
