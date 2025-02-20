@@ -1,0 +1,103 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header, footer {
+    background-color: #ff6347;
+    color: white;
+    text-align: center;
+    padding: 10px 0;
+}
+
+main {
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 0 20px;
+}
+
+section {
+    margin-bottom: 30px;
+}
+
+#timer-display {
+    font-size: 60px;
+    text-align: center;
+    color: #ff6347;
+}
+
+#timer-controls {
+    text-align: center;
+}
+
+button {
+    padding: 8px 16px;
+    margin: 5px;
+    background-color: #ff6347;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #e5533d;
+}
+
+button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+#task-list {
+    list-style: none;
+    padding: 0;
+}
+
+#task-list li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background-color: white;
+    margin-bottom: 5px;
+    border-radius: 4px;
+}
+
+#add-task-form {
+    display: flex;
+    gap: 10px;
+}
+
+#task-input {
+    flex-grow: 1;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+#settings-section label {
+    display: block;
+    margin: 10px 0;
+}
+
+#settings-section input {
+    width: 60px;
+    padding: 5px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+    #timer-display {
+        font-size: 40px;
+    }
+    button {
+        width: 100%;
+        margin: 5px 0;
+    }
+    #add-task-form {
+        flex-direction: column;
+    }
+}

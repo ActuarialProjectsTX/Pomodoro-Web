@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Tool</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <h1>Pomodoro Tool</h1>
+    </header>
+    <main>
+        <section id="timer-section">
+            <div id="timer-display">25:00</div>
+            <div id="timer-controls">
+                <button id="start-btn">Start</button>
+                <button id="pause-btn" disabled>Pause</button>
+                <button id="reset-btn">Reset</button>
+            </div>
+        </section>
+        <section id="task-section">
+            <h2>Tasks</h2>
+            <ul id="task-list"></ul>
+            <form id="add-task-form">
+                <input type="text" id="task-input" placeholder="Enter a task" required>
+                <button type="submit">Add</button>
+            </form>
+        </section>
+        <section id="settings-section">
+            <h2>Settings</h2>
+            <label>
+                Work Session (min): 
+                <input type="number" id="session-length" min="1" value="25">
+            </label>
+            <label>
+                Break (min): 
+                <input type="number" id="break-length" min="1" value="5">
+            </label>
+            <button id="save-settings">Save</button>
+        </section>
+    </main>
+    <footer>
+        <p>&copy; 2023 Pomodoro Tool</p>
+    </footer>
+    <script src="script.js"></script>
+</body>
+</html>
