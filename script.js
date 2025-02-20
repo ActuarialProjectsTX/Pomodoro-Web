@@ -21,6 +21,7 @@ const settingsBtn = document.getElementById('settings-btn');
 const settingsPanel = document.getElementById('settings-panel');
 const applySettingsBtn = document.getElementById('apply-settings');
 const closeSettingsBtn = document.getElementById('close-settings');
+const testSoundBtn = document.getElementById('test-sound-btn');
 
 // Load tasks and settings from local storage
 let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
@@ -104,16 +105,37 @@ function playSound(type) {
     const audioContext = new (window.AudioContext || window.webkitAudioContext)();
     const oscillator = audioContext.createOscillator();
     oscillator.type = 'sine';
-    if (type === 'beep') {
-        oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
-        oscillator.connect(audioContext.destination);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 0.5);
-    } else if (type === 'chime') {
-        oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
-        oscillator.connect(audioContext.destination);
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + 1);
+    oscillator.connect(audioContext.destination);
+    switch (type) {
+        case 'beep':
+            oscillator.frequency.setValueAtTime(500, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.5);
+            break;
+        case 'chime':
+            oscillator.frequency.setValueAtTime(1000, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 1);
+            break;
+        case 'bell':
+            oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.8);
+            break;
+        case 'ding':
+            oscillator.frequency.setValueAtTime(1200, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.3);
+            break;
+        case 'pulse':
+            oscillator.frequency.setValueAtTime(600, audioContext.currentTime);
+            oscillator.start();
+            oscillator.stop(audioContext.currentTime + 0.2);
+            setTimeout(() => {
+                oscillator.start();
+                oscillator.stop(audioContext.currentTime + 0.2);
+            }, 200);
+            break;
     }
 }
 
@@ -223,6 +245,9 @@ closeSettingsBtn.addEventListener('click', () => {
     settingsPanel.classList.remove('open');
 });
 applySettingsBtn.addEventListener('click', applySettings);
+testSoundBtn.addEventListener('click', () => {
+    playSound(document.getElementById('sound-select').value);
+});
 
 // Initialize
 updateTimerDisplay();
