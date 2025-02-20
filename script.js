@@ -1,44 +1,33 @@
 // Timer variables
-let timeLeft = 25 * 60; // Default 25 minutes in seconds
+let sessionLength = 25; // Default duration in minutes
+let timeLeft = sessionLength * 60;
 let isRunning = false;
-let isWorkSession = true;
 let intervalId = null;
-let sessionLength = 25;
-let breakLength = 5;
-
-// Task and progress variables
-let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
+let currentTask = null;
+let totalPomodoros = 0;
+let totalTimeSpent = 0;
 
 // DOM elements
 const timerDisplay = document.getElementById('timer-display');
 const startBtn = document.getElementById('start-btn');
 const pauseBtn = document.getElementById('pause-btn');
 const resetBtn = document.getElementById('reset-btn');
+const taskSelect = document.getElementById('task-select');
 const taskList = document.getElementById('task-list');
 const addTaskForm = document.getElementById('add-task-form');
 const taskInput = document.getElementById('task-input');
-const sessionInput = document.getElementById('session-length');
-const breakInput = document.getElementById('break-length');
-const saveSettingsBtn = document.getElementById('save-settings');
 
-// Load saved settings
-const savedSettings = JSON.parse(localStorage.getItem('settings'));
-if (savedSettings) {
-    sessionLength = savedSettings.session || 25;
-    breakLength = savedSettings.break || 5;
-    sessionInput.value = sessionLength;
-    breakInput.value = breakLength;
-    timeLeft = sessionLength * 60;
-    updateTimerDisplay();
-}
+// Load tasks from local storage
+let tasks = JSON.parse(localStorage.getItem('tasks')) || [];
 
-// Timer functions
+// Update timer display
 function updateTimerDisplay() {
     const minutes = Math.floor(timeLeft / 60);
     const seconds = timeLeft % 60;
     timerDisplay.textContent = `${minutes}:${seconds < 10 ? '0' + seconds : seconds}`;
 }
 
+// Start timer
 function startTimer() {
     if (!isRunning) {
         isRunning = true;
@@ -51,97 +40,104 @@ function startTimer() {
             } else {
                 clearInterval(intervalId);
                 isRunning = false;
-                notifyUser();
-                switchSession();
+                finishPomodoro();
             }
         }, 1000);
     }
 }
 
+// Pause timer
 function pauseTimer() {
-    if (isRunning) {
-        clearInterval(intervalId);
-        isRunning = false;
-        startBtn.disabled = false;
-        pauseBtn.disabled = true;
-    }
+    clearInterval(intervalId);
+    isRunning = false;
+    startBtn.disabled = false;
+    pauseBtn.disabled = true;
 }
 
+// Reset timer
 function resetTimer() {
     clearInterval(intervalId);
     isRunning = false;
     startBtn.disabled = false;
     pauseBtn.disabled = true;
-    timeLeft = (isWorkSession ? sessionLength : breakLength) * 60;
+    timeLeft = sessionLength * 60;
     updateTimerDisplay();
 }
 
-function switchSession() {
-    isWorkSession = !isWorkSession;
-    timeLeft = (isWorkSession ? sessionLength : breakLength) * 60;
+// Finish Pomodoro session
+function finishPomodoro() {
+    if (currentTask) {
+        const task = tasks.find(t => t.name === currentTask);
+        task.completed = (task.completed || 0) + 1;
+        totalPomodoros++;
+        totalTimeSpent += sessionLength;
+        updateStats();
+        saveTasks();
+        renderTasks();
+    }
+    alert('Pomodoro completed!');
+    resetTimer();
+}
+
+// Update stats display
+function updateStats() {
+    document.getElementById('total-pomodoros').textContent = `Total Pomodoros: ${totalPomodoros}`;
+    document.getElementById('total-time').textContent = `Total Time Spent: ${totalTimeSpent} minutes`;
+}
+
+// Set duration from buttons
+function setDuration(minutes) {
+    sessionLength = minutes;
+    timeLeft = sessionLength * 60;
     updateTimerDisplay();
-    if (!isWorkSession) {
-        // Increment completed Pomodoros for the first task
-        if (tasks.length > 0) {
-            tasks[0].completed = (tasks[0].completed || 0) + 1;
-            saveTasks();
-            renderTasks();
-        }
+}
+
+// Set custom duration
+function setCustomDuration() {
+    const customMinutes = parseInt(document.getElementById('custom-duration').value);
+    if (customMinutes > 0) {
+        sessionLength = customMinutes;
+        timeLeft = sessionLength * 60;
+        updateTimerDisplay();
     }
 }
 
-function notifyUser() {
-    // Sound
-    const audio = new Audio('https://www.soundjay.com/buttons/beep-01a.mp3');
-    audio.play();
-    // Browser notification
-    if (Notification.permission === 'granted') {
-        new Notification(isWorkSession ? 'Work session ended!' : 'Break ended!');
-    } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-            if (permission === 'granted') {
-                new Notification(isWorkSession ? 'Work session ended!' : 'Break ended!');
-            }
-        });
-    }
-}
-
-// Task functions
+// Render tasks
 function renderTasks() {
     taskList.innerHTML = '';
+    taskSelect.innerHTML = '<option value="">Select a task</option>';
     tasks.forEach((task, index) => {
         const li = document.createElement('li');
         li.innerHTML = `${task.name} <span>(${task.completed || 0} Pomodoros)</span> 
             <button onclick="deleteTask(${index})">Delete</button>`;
         taskList.appendChild(li);
+
+        const option = document.createElement('option');
+        option.value = task.name;
+        option.textContent = task.name;
+        taskSelect.appendChild(option);
     });
+    if (currentTask) taskSelect.value = currentTask;
 }
 
+// Add task
 function addTask(name) {
     tasks.push({ name, completed: 0 });
     saveTasks();
     renderTasks();
 }
 
+// Delete task
 function deleteTask(index) {
     tasks.splice(index, 1);
+    if (tasks.length === 0) currentTask = null;
     saveTasks();
     renderTasks();
 }
 
+// Save tasks to local storage
 function saveTasks() {
     localStorage.setItem('tasks', JSON.stringify(tasks));
-}
-
-// Settings functions
-function saveSettings() {
-    sessionLength = parseInt(sessionInput.value);
-    breakLength = parseInt(breakInput.value);
-    localStorage.setItem('settings', JSON.stringify({ session: sessionLength, break: breakLength }));
-    if (!isRunning) {
-        timeLeft = (isWorkSession ? sessionLength : breakLength) * 60;
-        updateTimerDisplay();
-    }
 }
 
 // Event listeners
@@ -153,8 +149,11 @@ addTaskForm.addEventListener('submit', (e) => {
     addTask(taskInput.value.trim());
     taskInput.value = '';
 });
-saveSettingsBtn.addEventListener('click', saveSettings);
+taskSelect.addEventListener('change', (e) => {
+    currentTask = e.target.value || null;
+});
 
 // Initialize
 updateTimerDisplay();
 renderTasks();
+updateStats();
